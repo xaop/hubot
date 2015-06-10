@@ -1,3 +1,9 @@
+# Description:
+#   XAOP scripts
+
+# Notes
+#   Mostly for ordering food
+
 module.exports = (robot) ->
   robot.hear /I want pizza/i, (res) ->
     res.send "Who doesn't? Try typing '@hubby: pizza <4 staggioni>' and I'll see what I can do!"
@@ -12,6 +18,7 @@ module.exports = (robot) ->
 
   robot.respond /pizza3/i, (msg)
     pizza = msg.match[1]
-    pizza_orders = pizza_orders or []
+    pizza_orders = robot.brain.get('pizzaOrders') or []
     pizza_orders.push pizza
+    robot.brain.set 'pizzaOrders', pizza_orders
     msg.reply "One pizza #{pizza} ordered, already #{pizza_orders.length} on the list"
