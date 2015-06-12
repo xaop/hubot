@@ -74,7 +74,7 @@ module.exports = (robot) ->
 
     ## ORDER a pizza ##
     robot.respond /pizza me (.*)/i, (msg) ->
-      if pizzas.isStarted
+      if pizzas.isStarted()
         sender = msg.message.user.name.toLowerCase()
         pizza = msg.match[1]
         pizzas.add(sender, pizza)
@@ -96,7 +96,7 @@ module.exports = (robot) ->
         names = pizzas.current()
         msg.send "#{qty} pizzas: #{names}"
         msg.send "Pizza heroes of today are #{heroes}"
-        msg.send "Status is '#{robot.brain.data.currentPizzaOrder}'"
+        # msg.send "Status is '#{robot.brain.data.currentPizzaOrder.current}'"
       else
         msg.send "No orders yet"
         msg.emote "me so sad :sob:"
@@ -111,7 +111,7 @@ module.exports = (robot) ->
     ## ADMIN - START a pizza ordering round ##
     robot.respond /pizza start/i, (msg) ->
       pizzas.start()
-      robot.messagRoom "slack-dev", "Pizza hero #{msg.message.user.name.toLowerCase()} started a :pizza: order - type '@hubby pizza me your-pizza-choice' - come on, I know you want it..."
+      robot.messageRoom "random", "Hero #{msg.message.user.name.toLowerCase()} started a :pizza: order - type 'hubby: pizza me your-pizza-choice' - come on, I know you want it..."
 
     ## ADMIN - CLOSE a pizza ordering round ##
     robot.respond /pizza (order|close)/i, (msg) ->
