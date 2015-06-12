@@ -1,11 +1,29 @@
-# TODO
-#   - start an order, only by certain people
-#   - order for someone else
+# Description:
+#   Order Pizza
+#
+# Dependencies:
+#
+# Configuration:
+#   None
+#
+# Commands:
+#   hubby chess me - Creates a new game between yourself and another person in the room
+#   hubby chess status - Gets the current state of the board
+#   hubby chess move <to> - Moves a piece to the coordinate position using standard chess notation
+#   hubby pizza me your-pizza-choice - Add a pizza to the running order
+#   no pizza for me - Cancel your pizza
+#   hubby pizza show/current - Show current pizza order
+#   hubby pizza history - Show total pizza's ordered
+#   hubby pizza start - ADMIN: Start Pizza order
+#   hubby pizza cancel - ADMIN: Cancel current Pizza order
+#   hubby pizza order/close "ADMIN - Order and confirm current Pizza order
+#
+# Author:
+#   StijnP (XAOP)
+#
 
 module.exports = (robot) ->
 
-    # robot.brain.get('pizzaOrders') or []
-    # does this persist after restarts ?
     robot.brain.data.currentPizzaOrder =
       pizzas: {},
       date: null,
@@ -41,11 +59,15 @@ module.exports = (robot) ->
         true
 
       closeOrder: ->
-        robot.brain.data.currentPizzaOrder.date = Date.now()
-        order = robot.brain.data.currentPizzaOrder
-        robot.brain.data.pizzaOrderHistory.push order
-        pizzas.clearOrder()
-        order
+        if pizzas.currentQty() > 0
+          robot.brain.data.currentPizzaOrder.date = new Date()
+          robot.brain.data.currentPizzaOrder.status = 'closed'
+          order = robot.brain.data.currentPizzaOrder
+          robot.brain.data.pizzaOrderHistory.push order
+          pizzas.clearOrder()
+          order
+        else
+
 
       clearOrder: ->
         robot.brain.data.currentPizzaOrder = {pizzas: {}, date: null, status: null}
@@ -102,7 +124,7 @@ module.exports = (robot) ->
         msg.emote "me so sad :sob:"
 
     ## SHOW HISTORY ##
-    robot.respond /pizza history/i, (msg) ->
+    robot.respond /pizza (history|stats)/i, (msg) ->
       count = 0
       for order in robot.brain.data.pizzaOrderHistory
         count += Object.keys(order['pizzas']).length
@@ -112,6 +134,9 @@ module.exports = (robot) ->
     robot.respond /pizza start/i, (msg) ->
       pizzas.start()
       robot.messageRoom "random", "Hero #{msg.message.user.name.toLowerCase()} started a :pizza: order - type 'hubby: pizza me your-pizza-choice' - come on, I know you want it..."
+      today = new Date()
+      if today.toString().match(/fri/i)
+        msg.send "And since it's Friday, pizza's are FREE for all !! :raised_hands:"
 
     ## ADMIN - CLOSE a pizza ordering round ##
     robot.respond /pizza (order|close)/i, (msg) ->
@@ -138,6 +163,4 @@ module.exports = (robot) ->
     ## SUPERADMIN - restore order history ##
     robot.respond /pizza restoreHistory/i, (msg) ->
       msg.reply "History restored... I hope, time will tell... or not, because it's history."
-
-
 
