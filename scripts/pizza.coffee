@@ -48,7 +48,7 @@ module.exports = (robot) ->
         order
 
       clearOrder: ->
-        robot.brain.data.currentPizzaOrder = {pizzas: {}, date: null}
+        robot.brain.data.currentPizzaOrder = {pizzas: {}, date: null, status: null}
 
       clearHistory: ->
         robot.brain.data.pizzaOrderHistoryBackup = robot.brain.data.pizzaOrderHistory
@@ -78,7 +78,7 @@ module.exports = (robot) ->
         sender = msg.message.user.name.toLowerCase()
         pizza = msg.match[1]
         pizzas.add(sender, pizza)
-        msg.reply "One pizza #{pizza} ordered, already #{pizzas.currentQty()} on the list"
+        msg.reply "One pizza #{pizza} ordered, now #{pizzas.currentQty()} on the list"
       else
         msg.send "Sorry, no running order at this time..."
 
@@ -96,6 +96,7 @@ module.exports = (robot) ->
         names = pizzas.current()
         msg.send "#{qty} pizzas: #{names}"
         msg.send "Pizza heroes of today are #{heroes}"
+        msg.send "Status is '#{robot.brain.data.currentPizzaOrder}'"
       else
         msg.send "No orders yet"
         msg.emote "me so sad :sob:"
@@ -104,13 +105,13 @@ module.exports = (robot) ->
     robot.respond /pizza history/i, (msg) ->
       count = 0
       for order in robot.brain.data.pizzaOrderHistory
-        count += Object.keys(order[pizzas]).length
+        count += Object.keys(order['pizzas']).length
       msg.send "#{count} pizza's eaten in #{robot.brain.data.pizzaOrderHistory.length} orders"
 
     ## ADMIN - START a pizza ordering round ##
     robot.respond /pizza start/i, (msg) ->
       pizzas.start()
-      robot.messagRoom "slack_dev", "Pizza hero #{msg.user.name.toLowerCase()} started a :pizza: order - type '@hubby pizza me your-pizza-choice' - come on, I know you want it..."
+      robot.messagRoom "slack-dev", "Pizza hero #{msg.message.user.name.toLowerCase()} started a :pizza: order - type '@hubby pizza me your-pizza-choice' - come on, I know you want it..."
 
     ## ADMIN - CLOSE a pizza ordering round ##
     robot.respond /pizza (order|close)/i, (msg) ->
