@@ -39,6 +39,8 @@ module.exports = (robot) ->
         ).join()
 
       start: ->
+        if this.isStarted()
+          this.closeOrder()
         robot.brain.data.currentPizzaOrder.status = 'open'
 
       isStarted: ->
