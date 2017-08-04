@@ -24,16 +24,15 @@
 
 module.exports = (robot) ->
 
-    robot.brain.data.currentPizzaOrder =
-      pizzas: {},
-      date: null,
-      status: null
     robot.brain.data.pizzaOrderHistory = robot.brain.data.pizzaOrderHistory or []
     robot.brain.data.pizzaOrderHistoryBackup = robot.brain.data.pizzaOrderHistoryBackup or []
 
     pizzas =
+      currentOrder: ->
+        robot.brain.data.currentPizzaOrder
+
       current: ->
-        obj = robot.brain.data.currentPizzaOrder.pizzas
+        obj = this.currentOrder().pizzas
         Object.keys(obj).map((key) ->
           obj[key]
         ).join()
@@ -41,37 +40,36 @@ module.exports = (robot) ->
       start: ->
         if this.isStarted()
           this.closeOrder()
-        robot.brain.data.currentPizzaOrder.status = 'open'
+        this.currentOrder().status = 'open'
 
       isStarted: ->
-        robot.brain.data.currentPizzaOrder.status == 'open'
+        this.currentOrder().status == 'open'
 
       currentQty: ->
-        Object.keys(robot.brain.data.currentPizzaOrder.pizzas).length
+        Object.keys(this.currentOrder().pizzas).length
 
       currentEaters: ->
-        Object.keys(robot.brain.data.currentPizzaOrder.pizzas).join()
+        Object.keys(this.currentOrder().pizzas).join()
 
       add: (user, name) ->
         # only 1 pizza per user atm
-        robot.brain.data.currentPizzaOrder.pizzas[user] = name
+        this.currentOrder().pizzas[user] = name
 
       remove: (user) ->
-        delete robot.brain.data.currentPizzaOrder.pizzas[user]
+        delete this.currentOrder().pizzas[user]
         true
 
       closeOrder: ->
         if pizzas.currentQty() > 0
-          robot.brain.data.currentPizzaOrder.date = new Date()
-          robot.brain.data.currentPizzaOrder.status = 'closed'
-          order = robot.brain.data.currentPizzaOrder
+          order = this.currentOrder()
+          order.date = new Date()
+          order.status = 'closed'
           robot.brain.data.pizzaOrderHistory.push order
-          pizzas.clearOrder()
+          pizzas.newOrder()
           order
         else
 
-
-      clearOrder: ->
+      newOrder: ->
         robot.brain.data.currentPizzaOrder = {pizzas: {}, date: null, status: null}
 
       clearHistory: ->
@@ -86,6 +84,8 @@ module.exports = (robot) ->
         for order in robot.brain.data.pizzaOrderHistory
           pizza_qty += Object.keys(order.pizzas).length
         "#{pizza_qty} pizzas ordered in #{order_qty} orders"
+
+    pizzas.newOrder()
 
     ## HELP ##
     robot.respond /pizza help/i, (msg) ->
