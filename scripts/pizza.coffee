@@ -38,9 +38,12 @@ module.exports = (robot) ->
         ).join()
 
       start: ->
+        order = this.currentOrder()
         if this.isStarted()
-          this.closeOrder()
-        this.currentOrder().status = 'open'
+          unless order.startDate && order.startDate >= new Date(new Date() - 24 * 60 * 60 * 1000)
+            this.closeOrder()
+        order.status = 'open'
+        order.startDate = order.startDate || new Date()
 
       isStarted: ->
         this.currentOrder().status == 'open'
