@@ -21,8 +21,33 @@
 # Author:
 #   StijnP (XAOP)
 #
+levenshtein = require 'fast-levenshtein'
 
 module.exports = (robot) ->
+
+    pazza_menu = ['funghi', 'mano', 'rochus', 'margherita', 'carbonara', 'prosciutto', 'fratello', 'capricciosa', 'calzione', '4stagioni', 'rimini', 'vesuvio', 'vulcano', 'hawaii', 'peppina', 'napoletana', 'romana', 'extravaganza', '8gusti', 'pazza', 'boscaiola', 'montana', 'primavera', 'parmigiana', 'pollo', 'pescatore', '4formaggi', '6formaggi', 'scampis', 'bruschetta', 'toscana', 'patapizza']
+    match_pizza = (order) ->
+        # Normalization
+        replacements = [order.toLowerCase(), # Shut up
+                        [/kazen/, "formaggi"],
+                        [/fromages/, "formaggi"],
+                        [/fromaggi/, "formaggi"],
+                        [/quattro/, "4"],
+                        [/quatro/, "4"],
+                        [/sei /, "6 "],
+                        [/octo/, "8"],
+                        [/4 s/, "4s"],
+                        [/4 f/, "4f"],
+                        [/6 f/, "6f"],
+                        [/8 g/, "8g"]]
+        normalized = replacements.reduce (s, r) ->
+            s.replace r[0], r[1]
+        return normalized.split(" ").map((norm_word) ->
+            pazza_menu.map((menu_item) ->
+                [levenshtein.get(norm_word, menu_item), menu_item]
+            ).sort()[0]
+        ).sort()[0][1] # TODO optimize
+
 
     robot.brain.data.currentPizzaOrder =
       pizzas: {},
