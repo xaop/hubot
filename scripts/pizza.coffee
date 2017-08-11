@@ -146,7 +146,7 @@ module.exports = (robot) ->
         msg.send "Sorry, no running order at this time..."
 
     ## ORDER a pizza for someone else ##
-    robot.respond /pizza for (\w+) (.*)/i, (msg) ->
+    robot.respond /pizza for (\S+) (.*)/i, (msg) ->
       if pizzas.isStarted()
         external = "#{msg.message.user.name.toLowerCase()} for #{msg.match[1]}"
         if /special/i.test(msg.match[2])
@@ -165,7 +165,7 @@ module.exports = (robot) ->
       msg.reply "Ok... I cancelled your order... pussy"
 
     ## CANCEL someone's pizza order
-    robot.respond /no pizza for (\w+)/i, (msg) ->
+    robot.respond /no pizza for (\S+)/i, (msg) ->
       external = "#{msg.message.user.name.toLowerCase()} for #{msg.match[1]}"
       pizzas.remove(external)
       msg.reply "Ok... tell #{msg.match[1]} their order is cancelled"
