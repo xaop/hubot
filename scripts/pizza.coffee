@@ -22,31 +22,35 @@
 #   StijnP (XAOP)
 #
 levenshtein = require 'fast-levenshtein'
+yaml = require 'js-yaml'
 
 module.exports = (robot) ->
 
     pazza_menu = ['funghi', 'mano', 'rochus', 'margherita', 'carbonara', 'prosciutto', 'fratello', 'capricciosa', 'calzione', '4stagioni', 'rimini', 'vesuvio', 'vulcano', 'hawaii', 'peppina', 'napoletana', 'romana', 'extravaganza', '8gusti', 'pazza', 'boscaiola', 'montana', 'primavera', 'parmigiana', 'pollo', 'pescatore', '4formaggi', '6formaggi', 'scampis', 'bruschetta', 'toscana', 'patapizza']
     match_pizza = (order) ->
-        # Normalization
-        replacements = [order.toLowerCase(), # Shut up
-                        [/kazen/, "formaggi"],
-                        [/fromages/, "formaggi"],
-                        [/fromaggi/, "formaggi"],
-                        [/quattro/, "4"],
-                        [/quatro/, "4"],
-                        [/sei /, "6 "],
-                        [/octo/, "8"],
-                        [/4 s/, "4s"],
-                        [/4 f/, "4f"],
-                        [/6 f/, "6f"],
-                        [/8 g/, "8g"]]
-        normalized = replacements.reduce (s, r) ->
-            s.replace r[0], r[1]
-        return normalized.split(" ").map((norm_word) ->
-            pazza_menu.map((menu_item) ->
-                [levenshtein.get(norm_word, menu_item), menu_item]
-            ).sort()[0]
-        ).sort()[0][1] # TODO optimize
+      # Normalization
+      replacements = [[/seizoene(n)?/, "stagioni"],
+                      [/kaze(n)?/, "formaggi"],
+                      [/fromage(s)?/, "formaggi"],
+                      [/fromaggi(o)?/, "formaggi"],
+                      [/quat(t)?r(o|e)/, "4"],
+                      [/sei/, "6"],
+                      [/octo/, "8"],
+                      [/vier/, "4"],
+                      [/zes/, "6"],
+                      [/acht/, "8"],
+                      [/4 s/, "4s"],
+                      [/4 f/, "4f"],
+                      [/6 f/, "6f"],
+                      [/8 g/, "8g"],
+                      [/random/, pazza_menu[Math.round(Math.random()*pazza_menu.length)-1]]]
+      normalized = replacements.reduce(((s, r) -> 
+          s.replace(r[0], r[1])), order.toLowerCase())
+      return normalized.split(" ").map((norm_word) ->
+          pazza_menu.map((menu_item) ->
+              [levenshtein.get(norm_word, menu_item), menu_item]
+          ).sort()[0]
+      ).sort()[0][1]
 
     robot.brain.data.pizzaOrderHistory = robot.brain.data.pizzaOrderHistory or []
     robot.brain.data.pizzaOrderHistoryBackup = robot.brain.data.pizzaOrderHistoryBackup or []
@@ -57,9 +61,14 @@ module.exports = (robot) ->
 
       current: ->
         obj = this.currentOrder().pizzas
-        Object.keys(obj).map((key) ->
-          obj[key]
-        ).join()
+        counted = yaml.safeDump(Object.keys(obj).reduce(((p, c) ->
+          if p[obj[c]]
+            p[obj[c]] += 1
+          else
+            p[obj[c]] = 1
+          return p
+        ), {}))
+
 
       start: ->
         order = this.currentOrder()
@@ -127,11 +136,21 @@ module.exports = (robot) ->
     robot.respond /pizza me (.*)/i, (msg) ->
       if pizzas.isStarted()
         sender = msg.message.user.name.toLowerCase()
-        pizza = msg.match[1]
+        pizza = match_pizza(msg.match[1])
         pizzas.add(sender, pizza)
         msg.reply "One pizza #{pizza} ordered, now #{pizzas.currentQty()} on the list"
       else
         msg.send "Sorry, no running order at this time..."
+
+    ## ORDER a pizza for someone else ##
+    robot.respond /pizza for (\w+) (.*)/i, (msg) ->
+      if pizzas.isStarted()
+        external = "#{msg.message.user.name.toLowerCase()} for #{msg.match[1]}"
+        pizza = match_pizza(msg.match[2])
+        pizzas.add(external, pizza)
+        msg.reply "One pizza #{pizza} ordered by #{external}, now #{pizzas.currentQty()} on the list"
+      else
+        msg.send "Apologize to #{msg.match[1]} for me, no running order at this time..."
 
     ## CANCEL your pizza order
     robot.hear /no pizza for me/i, (msg) ->
@@ -139,14 +158,19 @@ module.exports = (robot) ->
       pizzas.remove(sender)
       msg.reply "Ok... I cancelled your order... pussy"
 
+    ## CANCEL someone's pizza order
+    robot.respond /no pizza for (\w+)/i, (msg) ->
+      external = "#{msg.message.user.name.toLowerCase()} for #{msg.match[1]}"
+      pizzas.remove(external)
+      msg.reply "Ok... tell #{msg.match[1]} their order is cancelled"
+
     ## SHOW CURRENT order round ##
     robot.respond /pizza (current|show)/i, (msg) ->
       qty = pizzas.currentQty()
       if qty > 0
         heroes = pizzas.currentEaters()
         names = pizzas.current()
-        msg.send "#{qty} pizzas: #{names}"
-        msg.send "Pizza heroes of today are #{heroes}"
+        msg.send "#{qty} pizzas:\n#{names}Pizza heroes of today are #{heroes}"
         # msg.send "Status is '#{robot.brain.data.currentPizzaOrder.current}'"
       else
         msg.send "No orders yet"
@@ -175,8 +199,7 @@ module.exports = (robot) ->
         names = pizzas.current()
         order = pizzas.closeOrder()
         msg.send "Pizza order CLOSED, you should now order:"
-        msg.send "#{qty} pizzas: #{names}"
-        msg.send "Pizza heroes of today are #{heroes}"
+        msg.send "#{qty} pizzas:\n#{names}Pizza heroes of today are #{heroes}"
       else
         msg.send "Nothing to close, you need to order first, silly! :pizza:"
 
