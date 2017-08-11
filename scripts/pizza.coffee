@@ -136,7 +136,10 @@ module.exports = (robot) ->
     robot.respond /pizza me (.*)/i, (msg) ->
       if pizzas.isStarted()
         sender = msg.message.user.name.toLowerCase()
-        pizza = match_pizza(msg.match[1])
+        if /special/i.test(msg.match[1])
+          pizza = msg.match[1].slice(8)
+        else
+          pizza = match_pizza(msg.match[1])
         pizzas.add(sender, pizza)
         msg.reply "One pizza #{pizza} ordered, now #{pizzas.currentQty()} on the list"
       else
@@ -146,7 +149,10 @@ module.exports = (robot) ->
     robot.respond /pizza for (\w+) (.*)/i, (msg) ->
       if pizzas.isStarted()
         external = "#{msg.message.user.name.toLowerCase()} for #{msg.match[1]}"
-        pizza = match_pizza(msg.match[2])
+        if /special/i.test(msg.match[2])
+          pizza = msg.match[2].slice(8)
+        else
+          pizza = match_pizza(msg.match[2])
         pizzas.add(external, pizza)
         msg.reply "One pizza #{pizza} ordered by #{external}, now #{pizzas.currentQty()} on the list"
       else
