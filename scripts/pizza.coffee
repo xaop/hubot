@@ -99,8 +99,11 @@ module.exports = (robot) ->
       if pizzas.isStarted()
         sender = msg.message.user.name.toLowerCase()
         pizza = msg.match[1]
-        pizzas.add(sender, pizza)
-        msg.reply "One pizza #{pizza} ordered, now #{pizzas.currentQty()} on the list"
+        if (pizza.toLowerCase() == 'hawaï')
+          msg.reply("hawaï is not a pizza, and its definitely not ASCII !")
+        else	
+          pizzas.add(sender, pizza)
+          msg.reply "One pizza #{pizza} ordered, now #{pizzas.currentQty()} on the list"
       else
         msg.send "Sorry, no running order at this time..."
 
@@ -111,7 +114,7 @@ module.exports = (robot) ->
       msg.reply "Ok... I cancelled your order... pussy"
 
     ## SHOW CURRENT order round ##
-    robot.respond /pizza (current|show)/i, (msg) ->
+    robot.respond /pizza (current|show|list)/i, (msg) ->
       qty = pizzas.currentQty()
       if qty > 0
         heroes = pizzas.currentEaters()
